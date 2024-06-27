@@ -23,6 +23,10 @@ cargo new --lib io
 参考文档
 https://docs.gear.rs/gstd/index.html
 https://wiki.gear-tech.io/docs/examples/Gaming/rock-paper-scissors
+https://docs.gear.rs/gtest/index.html
+https://docs.gear.rs/gtest/struct.Program.html#method.send
+https://docs.gear.rs/gtest/struct.Log.html
+
 
 ## Project Structure
 
@@ -171,3 +175,5 @@ pebbles-game/tests/basic.rs
 ```cookie
 
 ```
+
+

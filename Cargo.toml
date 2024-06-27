@@ -1,6 +1,3 @@
-[workspace]
-members = ["io"]
-
 [package]
 name = "pebbles-game"
 version = "0.1.0"
@@ -11,7 +8,6 @@ gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2.0", default-
 pebbles-game-io = { path = "io" }
 rand = { version = "0.8", default-features = false, features = ["small_rng"] }
 rand_chacha = { version = "0.3", default-features = false }
-rand_core = "0.6"
 
 [build-dependencies]
 pebbles-game-io = { path = "io" }
@@ -21,3 +17,6 @@ gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2
 gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2.0" }
 pebbles-game-io = { path = "io" }
 bytecheck = "0.6.12"
+
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+region = "3.0"
