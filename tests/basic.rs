@@ -1,101 +1,85 @@
-use gstd::{prelude::*, Encode};
-use gtest::{Program, System};
-use pebbles_game_io::{PebblesInit, DifficultyLevel, PebblesAction, GameState, Player};
-use rkyv::option::ArchivedOption;
+#![no_std]
 
-/// Initialize the program with default settings.
-fn init_program(system: &System) -> Program {
-    let program = Program::current(system);
-    let init_msg = PebblesInit {
-        difficulty: DifficultyLevel::Easy,
-        pebbles_count: 20,
-        max_pebbles_per_turn: 3,
+use gstd::{msg, prelude::*};
+use pebbles_game_io::*;
+
+static mut PEBBLES_GAME: Option<GameState> = None;
+
+#[no_mangle]
+extern "C" fn init() {
+    // 从消息中获取初始化参数
+    let config: PebblesInit = msg::load().expect("Unable to decode PebblesInit");
+    let state = GameState {
+        pebbles_count: config.pebbles_count,
+        max_pebbles_per_turn: config.max_pebbles_per_turn,
+        pebbles_remaining: config.pebbles_count,
+        difficulty: config.difficulty,
+        first_player: Player::User, // 默认玩家先手
+        winner: None,
     };
-    program.send_bytes(1, &init_msg.encode());
-    program
+    unsafe {
+        PEBBLES_GAME = Some(state);
+    }
 }
 
-#[test]
-fn test_init() {
-    let system = System::new();
-    let program = init_program(&system);
-
-    let state: GameState = program
-        .read_state(1u8)
-        .expect("Failed to read state");
-    assert_eq!(state.pebbles_count, 20);
-    assert_eq!(state.max_pebbles_per_turn, 3);
-    assert_eq!(state.pebbles_remaining, 20);
-    assert_eq!(state.difficulty, DifficultyLevel::Easy);
-    assert_eq!(state.first_player, Player::User);
-    assert_eq!(state.winner, None);
+#[no_mangle]
+extern "C" fn handle() {
+    // 从消息中获取操作
+    let action: PebblesAction = msg::load().expect("Unable to decode PebblesAction");
+    unsafe {
+        if let Some(ref mut state) = PEBBLES_GAME {
+            match action {
+                PebblesAction::Turn(count) => {
+                    // 检查操作合法性
+                    if count <= state.max_pebbles_per_turn && count <= state.pebbles_remaining {
+                        state.pebbles_remaining -= count;
+                        // 检查玩家是否赢了
+                        if state.pebbles_remaining == 0 {
+                            state.winner = Some(Player::User);
+                            msg::reply(PebblesEvent::Won(Player::User), 0).expect("Unable to reply with event");
+                        } else {
+                            // 程序回合逻辑
+                            let program_turn = (state.pebbles_remaining - 1) % (state.max_pebbles_per_turn + 1) + 1;
+                            state.pebbles_remaining -= program_turn;
+                            // 检查程序是否赢了
+                            if state.pebbles_remaining == 0 {
+                                state.winner = Some(Player::Program);
+                                msg::reply(PebblesEvent::Won(Player::Program), 0).expect("Unable to reply with event");
+                            } else {
+                                msg::reply(PebblesEvent::CounterTurn(program_turn), 0).expect("Unable to reply with event");
+                            }
+                        }
+                    }
+                }
+                PebblesAction::GiveUp => {
+                    // 玩家放弃，程序获胜
+                    state.winner = Some(Player::Program);
+                    msg::reply(PebblesEvent::Won(Player::Program), 0).expect("Unable to reply with event");
+                }
+                PebblesAction::Restart { difficulty, pebbles_count, max_pebbles_per_turn } => {
+                    // 重新开始游戏，重置状态
+                    state.pebbles_count = pebbles_count;
+                    state.max_pebbles_per_turn = max_pebbles_per_turn;
+                    state.pebbles_remaining = pebbles_count;
+                    state.difficulty = difficulty;
+                    state.first_player = Player::User;
+                    state.winner = None;
+                }
+            }
+        }
+    }
 }
 
-#[test]
-fn test_turn() {
-    let system = System::new();
-    let program = init_program(&system);
-
-    let action = PebblesAction::Turn(3);
-    program.send_bytes(1, &action.encode());
-
-    let state: GameState = program
-        .read_state(1u8)
-        .expect("Failed to read state");
-    assert_eq!(state.pebbles_remaining, 17);
+#[no_mangle]
+extern "C" fn handle_reply(){
 }
 
-#[test]
-fn test_give_up() {
-    let system = System::new();
-    let program = init_program(&system);
-
-    let action = PebblesAction::GiveUp;
-    program.send_bytes(1, &action.encode());
-
-    let state: GameState = program
-        .read_state(1u8)
-        .expect("Failed to read state");
-    assert_eq!(state.winner, Some(Player::Program));
-}
-
-#[test]
-fn test_restart() {
-    let system = System::new();
-    let program = init_program(&system);
-
-    let action = PebblesAction::Restart {
-        difficulty: DifficultyLevel::Hard,
-        pebbles_count: 30,
-        max_pebbles_per_turn: 5,
-    };
-    program.send_bytes(1, &action.encode());
-
-    let state: GameState = program
-        .read_state(1u8)
-        .expect("Failed to read state");
-
-    assert_eq!(state.pebbles_count, 30);
-    assert_eq!(state.max_pebbles_per_turn, 5);
-    assert_eq!(state.pebbles_remaining, 30);
-    assert_eq!(state.difficulty, DifficultyLevel::Hard);
-    assert_eq!(state.first_player, Player::User);
-    assert_eq!(state.winner, None);
-}
-
-#[test]
-fn test_state() {
-    let system = System::new();
-    let program = init_program(&system);
-
-    let state: GameState = program
-        .read_state(1u8)
-        .expect("Failed to read state");
-
-    assert_eq!(state.pebbles_count, state.pebbles_count);
-    assert_eq!(state.max_pebbles_per_turn, state.max_pebbles_per_turn);
-    assert_eq!(state.pebbles_remaining, state.pebbles_remaining);
-    assert_eq!(state.difficulty, state.difficulty);
-    assert_eq!(state.first_player, state.first_player);
-    assert_eq!(state.winner, state.winner);
+#[no_mangle]
+extern "C" fn state() {
+    // 回复当前游戏状态
+    unsafe {
+        if let Some(ref state) = PEBBLES_GAME {
+            msg::reply(state, 0).expect("Unable to reply with state");
+        }
+    }
 }

@@ -3,95 +3,95 @@
 use gmeta::{In, InOut, Out, Metadata};
 use gstd::prelude::*;
 
-/// Metadata for the Pebbles game.
+// Metadata for the Pebbles game.
 pub struct PebblesMetadata;
 
 impl Metadata for PebblesMetadata {
-    /// Initialization message type.
+    // Initialization message type.
     type Init = In<PebblesInit>;
-    /// Handle message type, which includes both input and output.
+    // Handle message type, which includes both input and output.
     type Handle = InOut<PebblesAction, PebblesEvent>;
-    /// State message type.
+    // State message type.
     type State = Out<GameState>;
-    /// Reply message type.
+    // Reply message type.
     type Reply = ();
-    /// Others message type.
+    // Others message type.
     type Others = ();
-    /// Signal message type.
+    // Signal message type.
     type Signal = ();
 }
 
-/// Initialization structure for the Pebbles game.
+// Initialization structure for the Pebbles game.
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]
 pub struct PebblesInit {
-    /// Difficulty level of the game.
+    // Difficulty level of the game.
     pub difficulty: DifficultyLevel,
-    /// Total number of pebbles in the game.
+    // Total number of pebbles in the game.
     pub pebbles_count: u32,
-    /// Maximum number of pebbles that can be taken per turn.
+    // Maximum number of pebbles that can be taken per turn.
     pub max_pebbles_per_turn: u32,
 }
 
-/// Difficulty levels for the Pebbles game.
+// Difficulty levels for the Pebbles game.
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]
 pub enum DifficultyLevel {
-    /// Easy difficulty level.
+    // Easy difficulty level.
     #[default]
     Easy,
-    /// Hard difficulty level.
+    // Hard difficulty level.
     Hard,
 }
 
-/// Actions that can be taken in the Pebbles game.
+// Actions that can be taken in the Pebbles game.
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
 pub enum PebblesAction {
-    /// Take a turn by removing a specified number of pebbles.
+    // Take a turn by removing a specified number of pebbles.
     Turn(u32),
-    /// Give up the game.
+    // Give up the game.
     GiveUp,
-    /// Restart the game with specified parameters.
+    // Restart the game with specified parameters.
     Restart {
-        /// New difficulty level.
+        // New difficulty level.
         difficulty: DifficultyLevel,
-        /// New total number of pebbles.
+        // New total number of pebbles.
         pebbles_count: u32,
-        /// New maximum number of pebbles per turn.
+        // New maximum number of pebbles per turn.
         max_pebbles_per_turn: u32,
     },
 }
 
-/// Events that can occur in the Pebbles game.
+// Events that can occur in the Pebbles game.
 #[derive(Debug, Clone, Encode, Decode, TypeInfo)]
 pub enum PebblesEvent {
-    /// Counter's turn with the number of pebbles taken.
+    // Counter's turn with the number of pebbles taken.
     CounterTurn(u32),
-    /// Game won by a player.
+    // Game won by a player.
     Won(Player),
 }
 
-/// Players in the Pebbles game.
+// Players in the Pebbles game.
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]
 pub enum Player {
-    /// User player.
+    // User player.
     #[default]
     User,
-    /// Program player.
+    // Program player.
     Program,
 }
 
-/// State of the Pebbles game.
+// State of the Pebbles game.
 #[derive(Debug, Default, Clone, Encode, Decode, TypeInfo)]
 pub struct GameState {
-    /// Total number of pebbles in the game.
+    // Total number of pebbles in the game.
     pub pebbles_count: u32,
-    /// Maximum number of pebbles that can be taken per turn.
+    // Maximum number of pebbles that can be taken per turn.
     pub max_pebbles_per_turn: u32,
-    /// Number of pebbles remaining in the game.
+    // Number of pebbles remaining in the game.
     pub pebbles_remaining: u32,
-    /// Current difficulty level of the game.
+    // Current difficulty level of the game.
     pub difficulty: DifficultyLevel,
-    /// Player who goes first.
+    // Player who goes first.
     pub first_player: Player,
-    /// Winner of the game, if any.
+    // Winner of the game, if any.
     pub winner: Option<Player>,
 }
