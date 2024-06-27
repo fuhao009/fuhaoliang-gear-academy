@@ -10,7 +10,8 @@ edition = "2021"
 gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2.0", default-features = false }
 pebbles-game-io = { path = "io" }
 rand = { version = "0.8", default-features = false, features = ["small_rng"] }
-getrandom = { version = "0.2", features = ["js"] }
+rand_chacha = { version = "0.3", default-features = false }
+rand_core = "0.6"
 
 [build-dependencies]
 pebbles-game-io = { path = "io" }
@@ -19,6 +20,4 @@ gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2
 [dev-dependencies]
 gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2.0" }
 pebbles-game-io = { path = "io" }
-rkyv = { version = "0.7.42", default-features = false, features = ["no_std"] }
-bytecheck = { version = "0.6.8", default-features = false, features = ["no_std"] }
-rkyv_dyn = { version = "0.7.42", default-features = false, features = ["no_std"] }
+bytecheck = "0.6.12"
