@@ -67,6 +67,8 @@ pub enum PebblesEvent {
     CounterTurn(u32),
     // Game won by a player.
     Won(Player),
+    // Invalid turn event.
+    InvalidTurn,
 }
 
 // Players in the Pebbles game.

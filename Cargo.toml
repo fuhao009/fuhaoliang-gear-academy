@@ -1,22 +1,24 @@
-workspace = { members = [ "helloword","io"] }
+[workspace]
+members = ["io"]
+
 [package]
 name = "pebbles-game"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-gstd ={ git ="https://github.com/gear-tech/gear.git", tag ="v1.2.0" }
-pebbles-game-io.path = "io"
+gstd = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2.0", default-features = false }
+pebbles-game-io = { path = "io" }
+rand = { version = "0.8", default-features = false, features = ["small_rng"] }
+getrandom = { version = "0.2", features = ["js"] }
 
 [build-dependencies]
-pebbles-game-io.path = "io"
+pebbles-game-io = { path = "io" }
 gear-wasm-builder = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2.0" }
 
 [dev-dependencies]
-gtest = { git ="https://github.com/gear-tech/gear.git", tag = "v1.2.0" }
-pebbles-game-io.path ="io"
-rkyv = "0.7.42"
-bytecheck = "0.6.8"
-rkyv_dyn = "0.7.42"
+gtest = { git = "https://github.com/gear-tech/gear.git", tag = "v1.2.0" }
+pebbles-game-io = { path = "io" }
+rkyv = { version = "0.7.42", default-features = false, features = ["no_std"] }
+bytecheck = { version = "0.6.8", default-features = false, features = ["no_std"] }
+rkyv_dyn = { version = "0.7.42", default-features = false, features = ["no_std"] }
