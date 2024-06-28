@@ -1,6 +1,6 @@
 use gstd::{prelude::*};
 use gtest::{Log, Program, System};
-use pebbles_game_io::{GameState,DifficultyLevel, PebblesInit, PebblesAction};
+use pebbles_game_io::{GameState, DifficultyLevel, PebblesInit, PebblesAction,PebblesEvent,Player};
 
 #[test]
 fn test_pebbles_game() {
@@ -27,7 +27,51 @@ fn test_pebbles_game() {
     assert!(!result.main_failed());
 
     // 检查玩家操作的结果
-    let log = Log::builder().source(program.id()).dest(user_id).payload_bytes("PONG");
+    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesAction::Turn(3));
     assert!(res.contains(&log));
-    assert!(res.log().is_empty());
+
+    // 输赢结果
+    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::Won(Player::User));
+    assert!(res.contains(&log));
+
+    // 检查游戏状态
+    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::CounterTurn(4));
+    assert!(res.contains(&log));
+
+    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::InvalidTurn);
+    assert!(res.contains(&log));
+
+    // 检查游戏状态
+    let state: GameState = program.read_state(()).expect("Failed to read state");
+    assert_eq!(state.pebbles_remaining, 12);
+
+    // 玩家放弃游戏
+    let res = program.send(user_id, PebblesAction::GiveUp);
+    assert!(!res.main_failed());
+    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::Won(Player::Program));
+    assert!(res.contains(&log));
+
+    // 重启游戏
+    let res = program.send(
+        user_id,
+        PebblesAction::Restart {
+            difficulty: DifficultyLevel::Hard,
+            pebbles_count: 20,
+            max_pebbles_per_turn: 5,
+        },
+    );
+    assert!(!res.main_failed());
+
+    // 检查重启后的游戏状态
+    let state: GameState = program.read_state(()).expect("Failed to read state");
+    assert_eq!(state.pebbles_count, 20);
+    assert_eq!(state.max_pebbles_per_turn, 5);
+    assert_eq!(state.pebbles_remaining, 20);
+    assert!(state.winner.is_none());
+
+    let default_difficulty = DifficultyLevel::default(); // 由于 #[default] 属性，这将是 DifficultyLevel::Easy
+    println!("{:?}", default_difficulty); // 输出：Easy
+
+    let hard_difficulty = DifficultyLevel::Hard;
+    println!("{:?}", hard_difficulty); // 输出：Hard
 }
