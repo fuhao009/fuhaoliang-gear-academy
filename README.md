@@ -10,7 +10,7 @@ gear --dev --rpc-port 9944
 
 https://idea.gear-tech.io/programs?node=ws://localhost:9944
 
-Program ID: 0x31663549cdfa1141a751077b4aabd82832872fd0a9510c4ef2b17d7a2855ed04
+Program ID: 0xdf06a4117daf2534e9afeeb5bcbcf5efc35e0e0050c62898935f0a78495
 ```
 
 游戏规则：
