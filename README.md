@@ -13,7 +13,7 @@ https://idea.gear-tech.io/programs?node=ws://localhost:9944
 Program ID: 0xdf06a4117daf2534e9afeeb5bcbcf5efc35e0e0050c62898935f0a78495
 ```
 
-游戏规则：
+### 游戏规则：
 
 1. **玩家**：游戏有两个玩家：
     - **用户**：玩家。
@@ -29,25 +29,34 @@ Program ID: 0xdf06a4117daf2534e9afeeb5bcbcf5efc35e0e0050c62898935f0a78495
 4. **获胜条件**：
     - 拿到最后一个（或多个）石子的玩家获胜。
 
-参考文档
+### 参考文档
+
+```
 https://docs.gear.rs/gstd/index.html
 https://wiki.gear-tech.io/docs/examples/Gaming/rock-paper-scissors
 https://docs.gear.rs/gtest/index.html
 https://docs.gear.rs/gtest/struct.Program.html#method.send
 https://docs.gear.rs/gtest/struct.Log.html
+```
 
 
-## Project Structure
 
+### Project Structure
+
+```
 pebbles-game
-    ├── io
-    │   ├── src
-    │   │   └── lib.rs
-    │   └── Cargo.toml
-    ├── src
-    │   └── lib.rs
-    ├── tests
-    │   └── basic.rs
-    ├── Cargo.lock
-    ├── Cargo.toml
-    └── build.rs
+├── io
+│   ├── src
+│   │   └── lib.rs
+│   └── Cargo.toml
+├── src
+│   └── lib.rs
+├── tests
+│   └── basic.rs
+├── Cargo.lock
+├── Cargo.toml
+└── build.rs
+```
+
+
+
