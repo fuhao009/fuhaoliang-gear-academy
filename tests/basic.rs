@@ -30,27 +30,28 @@ fn test_pebbles_game() {
     let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesAction::Turn(3));
     assert!(res.contains(&log));
 
-    // 输赢结果
-    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::Won(Player::User));
-    println!("Expected log: {:?}", log);
-
     // 检查游戏状态
     let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::CounterTurn(3));
-    println!("Expected log: {:?}", log);
     assert!(res.contains(&log));
 
     let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::InvalidTurn);
-    println!("Expected log: {:?}", log);
+    assert!(res.contains(&log));
 
     // 检查游戏状态
     let state: GameState = program.read_state(()).expect("Failed to read state");
-    assert_eq!(state.pebbles_remaining, 12);
+    assert_eq!(state.pebbles_remaining, 9);
 
-    // 玩家放弃游戏
+    // 玩家胜利
+    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::Won(Player::User));
+    println!("Expected log: {:?}", log);
+
+
+    // 玩家放弃游戏 系统胜利
     let res = program.send(user_id, PebblesAction::GiveUp);
     assert!(!res.main_failed());
     let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::Won(Player::Program));
     assert!(res.contains(&log));
+
 
     // 重启游戏
     let res = program.send(

@@ -2,6 +2,15 @@
 cargo new --lib pebbles-game 
 
 cargo new --lib io
+cargo test
+
+cargo build
+
+gear --dev --rpc-port 9944
+
+https://idea.gear-tech.io/programs?node=ws://localhost:9944
+
+Program ID: 0x31663549cdfa1141a751077b4aabd82832872fd0a9510c4ef2b17d7a2855ed04
 ```
 
 游戏规则：
