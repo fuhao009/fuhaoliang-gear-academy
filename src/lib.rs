@@ -5,20 +5,21 @@ use pebbles_game_io::*;
 use rand::Rng;
 use rand::SeedableRng;
 use rand_chacha::ChaCha8Rng;
+use gstd::exec;
 
 static mut PEBBLES_GAME: Option<GameState> = None;
 
 #[no_mangle]
 extern "C" fn init() {
     let init_message: PebblesInit = msg::load().expect("Unable to load init message");
-    let mut rng = ChaCha8Rng::seed_from_u64(0);  // Replace 0 with a seed value if needed
+    let first_player = if exec::random::<bool>() { Player::User } else { Player::Program };
 
     let game_state = GameState {
         pebbles_count: init_message.pebbles_count,
         max_pebbles_per_turn: init_message.max_pebbles_per_turn,
         pebbles_remaining: init_message.pebbles_count,
         difficulty: init_message.difficulty,
-        first_player: if rng.gen_bool(0.5) { Player::User } else { Player::Program },
+        first_player,
         winner: None,
     };
     unsafe { PEBBLES_GAME = Some(game_state) };
@@ -29,7 +30,6 @@ extern "C" fn handle() {
     let action: PebblesAction = msg::load().expect("Unable to load message");
 
     let game_state = unsafe { PEBBLES_GAME.as_mut().expect("Game is not initialized") };
-    let mut rng = ChaCha8Rng::seed_from_u64(0);  // Replace 0 with a seed value if needed
 
     match action {
         PebblesAction::Turn(pebbles) => {
