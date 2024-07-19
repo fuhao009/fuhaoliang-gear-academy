@@ -78,3 +78,41 @@ fn test_pebbles_game() {
     let hard_difficulty = DifficultyLevel::Hard;
     println!("{:?}", hard_difficulty); // 输出：Hard
 }
+
+#[test]
+fn test_hard_difficulty() {
+    let sys = System::new();
+    sys.init_logger();
+    let program = Program::current(&sys);
+
+    let user_id: u64 = 100001;
+
+    // 初始化游戏（10个石子，每次最多3个石子，困难难度）
+    let result = program.send(
+        user_id,
+        PebblesInit {
+            difficulty: DifficultyLevel::Hard,
+            pebbles_count: 10,
+            max_pebbles_per_turn: 3,
+        },
+    );
+
+    // 确认初始化成功
+    assert!(!result.main_failed());
+
+    // 模拟用户移除2个石子
+    let res = program.send(user_id, PebblesAction::Turn(2));
+    assert!(!res.main_failed());
+
+    // 检查游戏状态
+    let state: GameState = program.read_state(()).expect("Failed to read state");
+    assert_eq!(state.pebbles_remaining, 8);
+
+    // 检查程序的回合
+    let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::CounterTurn(3));
+    assert!(res.contains(&log));
+
+    // 检查游戏状态
+    let state: GameState = program.read_state(()).expect("Failed to read state");
+    assert_eq!(state.pebbles_remaining, 5);
+}
