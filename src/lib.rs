@@ -1,6 +1,6 @@
 #![no_std]
 
-use gstd::{msg, prelude::*};
+use gstd::{debug, msg, prelude::*};
 use pebbles_game_io::*;
 use exec::random;
 use gstd::exec;
@@ -10,21 +10,23 @@ static mut PEBBLES_GAME: Option<GameState> = None;
 #[no_mangle]
 extern "C" fn init() {
     let init_message: PebblesInit = msg::load().expect("Unable to load init message");
-    let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
+    // let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
     // 玩家和机器人随机首发
-    let first_player = match random(subject) {
-        Ok((_, num)) => {
-            if num % 2 == 0 {
-                Player::User
-            } else {
-                Player::Program
-            }
-        }
-        Err(_) => {
-            // 处理错误，例如默认选择某个玩家
-            Player::Program
-        }
-    };
+    let first_player =  Player::User{};
+
+    //     match random(subject) {
+    //     Ok((_, num)) => {
+    //         if num % 2 == 0 {
+    //             Player::User
+    //         } else {
+    //             Player::Program
+    //         }
+    //     }
+    //     Err(_) => {
+    //         // 处理错误，例如默认选择某个玩家
+    //         Player::Program
+    //     }
+    // };
     let game_state = GameState {
         pebbles_count: init_message.pebbles_count,
         max_pebbles_per_turn: init_message.max_pebbles_per_turn,
@@ -43,8 +45,12 @@ extern "C" fn handle() {
     let action: PebblesAction = msg::load().expect("Unable to load message");
 
     fn get_random_u32(min_value: Option<u32>, max_value: Option<u32>, game_state: &GameState) -> u32 {
+        if game_state.pebbles_remaining == 0 {
+            return 0;
+        }
+
         let salt = msg::id();
-        let (hash, _num) = exec::random(salt.into()).expect("get_random_u32_in_range(): random call failed");
+        let (hash, _num) = random(salt.into()).expect("get_random_u32_in_range(): random call failed");
         let random_number = u32::from_le_bytes([hash[0], hash[1], hash[2], hash[3]]);
 
         let base_random = match (min_value, max_value) {
@@ -54,12 +60,15 @@ extern "C" fn handle() {
             (None, None) => random_number,
         };
 
+        let base_random = base_random.min(game_state.pebbles_remaining); // Ensure base_random does not exceed pebbles_remaining
+
         match game_state.difficulty {
             DifficultyLevel::Hard => {
                 let max_pebbles_plus_one = game_state.max_pebbles_per_turn + 1;
                 let candidate_value = ((base_random / max_pebbles_plus_one) + 1) * max_pebbles_plus_one;
 
-                // Ensure candidate_value is within the provided range
+                // Ensure candidate_value is within the provided range and does not exceed pebbles_remaining
+                let candidate_value = candidate_value.min(game_state.pebbles_remaining);
                 if let (Some(min), Some(max)) = (min_value, max_value) {
                     if candidate_value >= min && candidate_value <= max {
                         return candidate_value;
@@ -76,14 +85,14 @@ extern "C" fn handle() {
                 base_random
             },
             DifficultyLevel::Easy => base_random,
-        }
+        }.min(game_state.pebbles_remaining).min(max_value.unwrap_or(u32::MAX)).max(min_value.unwrap_or(0))
     }
-
 
     let game_state = unsafe { PEBBLES_GAME.as_mut().expect("Game is not initialized") };
 
     match action {
         PebblesAction::Turn(pebbles) => {
+            debug!("User pebbles {pebbles}");
             if pebbles < 1 || pebbles > game_state.max_pebbles_per_turn {
                 msg::reply(PebblesEvent::InvalidTurn, 0).expect("Unable to reply");
                 return;
@@ -109,18 +118,17 @@ extern "C" fn handle() {
                     // let k = game_state.max_pebbles_per_turn; // Example value for K, this should be adjusted based on game design
                     // let mut program_pebbles = game_state.pebbles_remaining % (k + 1);
 
-                    let mut program_pebbles = get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn),game_state);
-
-                    // Ensure that the program_pebbles is within the valid range and reduces the pebbles_remaining
-                    if program_pebbles > game_state.pebbles_remaining {
-                        program_pebbles = game_state.pebbles_remaining
-                    }
+                    let program_pebbles = get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn),game_state);
+                    debug!("program pebbles {program_pebbles}");
                     program_pebbles
                 }
             };
             game_state.pebbles_remaining -= program_pebbles;
 
+            // 返回当前回合数
+            // msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
             msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
+
 
             if game_state.pebbles_remaining == 0 {
                 game_state.winner = Some(Player::Program);
@@ -136,20 +144,21 @@ extern "C" fn handle() {
             game_state.max_pebbles_per_turn = max_pebbles_per_turn;
             game_state.pebbles_remaining = pebbles_count;
             game_state.difficulty = difficulty;
-            let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
-            game_state.first_player = match random(subject) {
-                Ok((_, num)) => {
-                    if num % 2 == 0 {
-                        Player::User
-                    } else {
-                        Player::Program
-                    }
-                }
-                Err(_) => {
-                    // 处理错误，例如默认选择某个玩家
-                    Player::Program
-                }
-            };
+            // let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
+            game_state.first_player =  Player::User{};
+            // game_state.first_player = match random(subject) {
+            //     Ok((_, num)) => {
+            //         if num % 2 == 0 {
+            //             Player::User
+            //         } else {
+            //             Player::Program
+            //         }
+            //     }
+            //     Err(_) => {
+            //         // 处理错误，例如默认选择某个玩家
+            //         Player::Program
+            //     }
+            // };
             game_state.winner = None;
         }
     }
