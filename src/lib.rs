@@ -82,14 +82,14 @@ extern "C" fn handle() {
             let program_pebbles = match game_state.difficulty {
                 DifficultyLevel::Easy => get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn)),
                 DifficultyLevel::Hard => {
-                    let k = 4; // Example value for K, this should be adjusted based on game design
+                    let k = game_state.max_pebbles_per_turn; // Example value for K, this should be adjusted based on game design
                     let mut program_pebbles = game_state.pebbles_remaining % (k + 1);
-                    if program_pebbles == 0 {
-                        program_pebbles = get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn));
-                    }
+
+                    program_pebbles = get_random_u32(Some(program_pebbles), Some(game_state.max_pebbles_per_turn));
+
                     // Ensure that the program_pebbles is within the valid range and reduces the pebbles_remaining
                     if program_pebbles > game_state.pebbles_remaining {
-                        program_pebbles = game_state.pebbles_remaining;
+                        program_pebbles = game_state.pebbles_remaining
                     }
                     program_pebbles
                 }
@@ -101,11 +101,6 @@ extern "C" fn handle() {
             if game_state.pebbles_remaining == 0 {
                 game_state.winner = Some(Player::Program);
                 msg::reply(PebblesEvent::Won(Player::Program), 0).expect("Unable to reply");
-            }
-
-            // Ensure the game state is updated correctly after each turn
-            if game_state.pebbles_remaining < 0 {
-                game_state.pebbles_remaining = 0;
             }
         }
         PebblesAction::GiveUp => {

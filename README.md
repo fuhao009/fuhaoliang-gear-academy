@@ -4,7 +4,7 @@ cargo new --lib pebbles-game
 cargo new --lib io
 cargo test
 
-cargo build
+cargo build -r
 
 gear --dev --rpc-port 9944
 
@@ -28,6 +28,10 @@ Program ID: 0xdf06a4117daf2534e9afeeb5bcbcf5efc35e0e0050c62898935f0a78495
 
 4. **获胜条件**：
     - 拿到最后一个（或多个）石子的玩家获胜。
+
+
+简单模式（DifficultyLevel::Easy）：机器人随机选择要移除的卵石数量。
+困难模式（DifficultyLevel::Hard）：机器人使用策略确保剩余的卵石数量是 K+1 的倍数，以增加程序获胜的概率。
 
 ### 参考文档
 
