@@ -87,6 +87,10 @@ extern "C" fn handle() {
                     if program_pebbles == 0 {
                         program_pebbles = get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn));
                     }
+                    // Ensure that the program_pebbles is within the valid range and reduces the pebbles_remaining
+                    if program_pebbles > game_state.pebbles_remaining {
+                        program_pebbles = game_state.pebbles_remaining;
+                    }
                     program_pebbles
                 }
             };
