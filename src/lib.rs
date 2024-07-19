@@ -4,6 +4,7 @@ use gstd::{msg, prelude::*};
 use pebbles_game_io::*;
 use exec::random;
 use gstd::exec;
+use gstd::debug;
 
 static mut PEBBLES_GAME: Option<GameState> = None;
 
@@ -42,16 +43,40 @@ extern "C" fn init() {
 extern "C" fn handle() {
     let action: PebblesAction = msg::load().expect("Unable to load message");
 
-    fn get_random_u32(min_value: Option<u32>, max_value: Option<u32>) -> u32 {
+    fn get_random_u32(min_value: Option<u32>, max_value: Option<u32>, game_state: &GameState) -> u32 {
         let salt = msg::id();
         let (hash, _num) = exec::random(salt.into()).expect("get_random_u32_in_range(): random call failed");
         let random_number = u32::from_le_bytes([hash[0], hash[1], hash[2], hash[3]]);
 
-        match (min_value, max_value) {
+        let base_random = match (min_value, max_value) {
             (Some(min), Some(max)) => (random_number % (max - min + 1)) + min,
             (Some(min), None) => random_number.max(min),
             (None, Some(max)) => random_number % (max + 1),
             (None, None) => random_number,
+        };
+
+        match game_state.difficulty {
+            DifficultyLevel::Hard => {
+                let max_pebbles_plus_one = game_state.max_pebbles_per_turn + 1;
+                let candidate_value = ((base_random / max_pebbles_plus_one) + 1) * max_pebbles_plus_one;
+
+                // Ensure candidate_value is within the provided range
+                if let (Some(min), Some(max)) = (min_value, max_value) {
+                    if candidate_value >= min && candidate_value <= max {
+                        return candidate_value;
+                    }
+                } else if let Some(min) = min_value {
+                    if candidate_value >= min {
+                        return candidate_value;
+                    }
+                } else if let Some(max) = max_value {
+                    if candidate_value <= max {
+                        return candidate_value;
+                    }
+                }
+                base_random
+            },
+            DifficultyLevel::Easy => base_random,
         }
     }
 
@@ -80,12 +105,12 @@ extern "C" fn handle() {
 
             // Simulate program's turn
             let program_pebbles = match game_state.difficulty {
-                DifficultyLevel::Easy => get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn)),
+                DifficultyLevel::Easy => get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn),game_state),
                 DifficultyLevel::Hard => {
-                    let k = game_state.max_pebbles_per_turn; // Example value for K, this should be adjusted based on game design
-                    let mut program_pebbles = game_state.pebbles_remaining % (k + 1);
+                    // let k = game_state.max_pebbles_per_turn; // Example value for K, this should be adjusted based on game design
+                    // let mut program_pebbles = game_state.pebbles_remaining % (k + 1);
 
-                    program_pebbles = get_random_u32(Some(program_pebbles), Some(game_state.max_pebbles_per_turn));
+                    let mut program_pebbles = get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn),game_state);
 
                     // Ensure that the program_pebbles is within the valid range and reduces the pebbles_remaining
                     if program_pebbles > game_state.pebbles_remaining {
