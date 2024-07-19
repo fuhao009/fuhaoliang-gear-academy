@@ -56,8 +56,6 @@ extern "C" fn handle() {
     }
 
 
-    let mut rng = get_random_u32(None,None);
-
     let game_state = unsafe { PEBBLES_GAME.as_mut().expect("Game is not initialized") };
 
     match action {
