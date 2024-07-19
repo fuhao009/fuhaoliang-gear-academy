@@ -98,6 +98,11 @@ extern "C" fn handle() {
                 game_state.winner = Some(Player::Program);
                 msg::reply(PebblesEvent::Won(Player::Program), 0).expect("Unable to reply");
             }
+
+            // Ensure the game state is updated correctly after each turn
+            if game_state.pebbles_remaining < 0 {
+                game_state.pebbles_remaining = 0;
+            }
         }
         PebblesAction::GiveUp => {
             game_state.winner = Some(Player::Program);

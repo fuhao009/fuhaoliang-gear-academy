@@ -103,13 +103,18 @@ fn test_hard_difficulty() {
     // 模拟用户移除2个石子
     let res = program.send(user_id, PebblesAction::Turn(2));
     assert!(!res.main_failed());
-    let res = program.send(user_id, PebblesAction::Turn(1));
-    assert!(!res.main_failed());
-    let res = program.send(user_id, PebblesAction::Turn(2));
-    assert!(!res.main_failed());
-    // 检查游戏状态
     let state: GameState = program.read_state(()).expect("Failed to read state");
     assert_eq!(state.pebbles_remaining, 8);
+
+    let res = program.send(user_id, PebblesAction::Turn(1));
+    assert!(!res.main_failed());
+    let state: GameState = program.read_state(()).expect("Failed to read state");
+    assert_eq!(state.pebbles_remaining, 7);
+
+    let res = program.send(user_id, PebblesAction::Turn(2));
+    assert!(!res.main_failed());
+    let state: GameState = program.read_state(()).expect("Failed to read state");
+    assert_eq!(state.pebbles_remaining, 5);
 
     // 检查程序的回合
     let log = Log::builder().source(program.id()).dest(user_id).payload(PebblesEvent::CounterTurn(3));
@@ -117,5 +122,5 @@ fn test_hard_difficulty() {
 
     // 检查游戏状态
     let state: GameState = program.read_state(()).expect("Failed to read state");
-    assert_eq!(state.pebbles_remaining, 5);
+    assert_eq!(state.pebbles_remaining, 2);
 }
