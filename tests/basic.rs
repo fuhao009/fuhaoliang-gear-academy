@@ -92,8 +92,8 @@ fn test_hard_difficulty() {
         user_id,
         PebblesInit {
             difficulty: DifficultyLevel::Hard,
-            pebbles_count: 10,
-            max_pebbles_per_turn: 2,
+            pebbles_count: 4,
+            max_pebbles_per_turn: 1,
         },
     );
 
@@ -103,7 +103,7 @@ fn test_hard_difficulty() {
     // 模拟用户移除2个石子
     let state: GameState = program.read_state(()).expect("Failed to read state");
     println!("{:?}", state.pebbles_remaining);
-    let res = program.send(user_id, PebblesAction::Turn(2));
+    let res = program.send(user_id, PebblesAction::Turn(1));
     assert!(!res.main_failed());
     let state: GameState = program.read_state(()).expect("Failed to read state");
     println!("{:?}", state.pebbles_remaining);

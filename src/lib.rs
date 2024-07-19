@@ -10,23 +10,21 @@ static mut PEBBLES_GAME: Option<GameState> = None;
 #[no_mangle]
 extern "C" fn init() {
     let init_message: PebblesInit = msg::load().expect("Unable to load init message");
-    // let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
+    let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
     // 玩家和机器人随机首发
-    let first_player =  Player::User{};
-
-    //     match random(subject) {
-    //     Ok((_, num)) => {
-    //         if num % 2 == 0 {
-    //             Player::User
-    //         } else {
-    //             Player::Program
-    //         }
-    //     }
-    //     Err(_) => {
-    //         // 处理错误，例如默认选择某个玩家
-    //         Player::Program
-    //     }
-    // };
+    let first_player =  match random(subject) {
+        Ok((_, num)) => {
+            if num % 2 == 0 {
+                Player::User
+            } else {
+                Player::Program
+            }
+        }
+        Err(_) => {
+            // 处理错误，例如默认选择某个玩家
+            Player::Program
+        }
+    };
     let game_state = GameState {
         pebbles_count: init_message.pebbles_count,
         max_pebbles_per_turn: init_message.max_pebbles_per_turn,
@@ -127,12 +125,13 @@ extern "C" fn handle() {
 
             // 返回当前回合数
             // msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
-            msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
-
+            // msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
 
             if game_state.pebbles_remaining == 0 {
                 game_state.winner = Some(Player::Program);
                 msg::reply(PebblesEvent::Won(Player::Program), 0).expect("Unable to reply");
+            } else{
+                msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
             }
         }
         PebblesAction::GiveUp => {
@@ -144,21 +143,21 @@ extern "C" fn handle() {
             game_state.max_pebbles_per_turn = max_pebbles_per_turn;
             game_state.pebbles_remaining = pebbles_count;
             game_state.difficulty = difficulty;
-            // let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
-            game_state.first_player =  Player::User{};
-            // game_state.first_player = match random(subject) {
-            //     Ok((_, num)) => {
-            //         if num % 2 == 0 {
-            //             Player::User
-            //         } else {
-            //             Player::Program
-            //         }
-            //     }
-            //     Err(_) => {
-            //         // 处理错误，例如默认选择某个玩家
-            //         Player::Program
-            //     }
-            // };
+            let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
+            // game_state.first_player =  Player::User{};
+            game_state.first_player = match random(subject) {
+                Ok((_, num)) => {
+                    if num % 2 == 0 {
+                        Player::User
+                    } else {
+                        Player::Program
+                    }
+                }
+                Err(_) => {
+                    // 处理错误，例如默认选择某个玩家
+                    Player::Program
+                }
+            };
             game_state.winner = None;
         }
     }
