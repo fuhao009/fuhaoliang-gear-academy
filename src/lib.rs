@@ -2,9 +2,7 @@
 
 use gstd::{msg, prelude::*};
 use pebbles_game_io::*;
-use rand::Rng;
-use rand::SeedableRng;
-use rand_chacha::ChaCha8Rng;
+use exec::random;
 use gstd::exec;
 
 static mut PEBBLES_GAME: Option<GameState> = None;
@@ -12,22 +10,53 @@ static mut PEBBLES_GAME: Option<GameState> = None;
 #[no_mangle]
 extern "C" fn init() {
     let init_message: PebblesInit = msg::load().expect("Unable to load init message");
-    let first_player = if exec::random::<bool>() { Player::User } else { Player::Program };
-
+    let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
+    // 玩家和机器人随机首发
+    let first_player = match random(subject) {
+        Ok((_, num)) => {
+            if num % 2 == 0 {
+                Player::User
+            } else {
+                Player::Program
+            }
+        }
+        Err(_) => {
+            // 处理错误，例如默认选择某个玩家
+            Player::Program
+        }
+    };
     let game_state = GameState {
         pebbles_count: init_message.pebbles_count,
         max_pebbles_per_turn: init_message.max_pebbles_per_turn,
         pebbles_remaining: init_message.pebbles_count,
+        // 游戏困难度
         difficulty: init_message.difficulty,
         first_player,
         winner: None,
     };
+
     unsafe { PEBBLES_GAME = Some(game_state) };
 }
 
 #[no_mangle]
 extern "C" fn handle() {
     let action: PebblesAction = msg::load().expect("Unable to load message");
+
+    fn get_random_u32(min_value: Option<u32>, max_value: Option<u32>) -> u32 {
+        let salt = msg::id();
+        let (hash, _num) = exec::random(salt.into()).expect("get_random_u32_in_range(): random call failed");
+        let random_number = u32::from_le_bytes([hash[0], hash[1], hash[2], hash[3]]);
+
+        match (min_value, max_value) {
+            (Some(min), Some(max)) => (random_number % (max - min + 1)) + min,
+            (Some(min), None) => random_number.max(min),
+            (None, Some(max)) => random_number % (max + 1),
+            (None, None) => random_number,
+        }
+    }
+
+
+    let mut rng = get_random_u32(None,None);
 
     let game_state = unsafe { PEBBLES_GAME.as_mut().expect("Game is not initialized") };
 
@@ -50,7 +79,7 @@ extern "C" fn handle() {
                 msg::reply(PebblesEvent::Won(Player::User), 0).expect("Unable to reply");
             } else {
                 // Simulate program's turn
-                let program_pebbles = rng.gen_range(1..=game_state.max_pebbles_per_turn).min(game_state.pebbles_remaining);
+                let program_pebbles = get_random_u32(Some(game_state.pebbles_remaining),Some(game_state.max_pebbles_per_turn));
                 game_state.pebbles_remaining -= program_pebbles;
 
                 msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
@@ -70,7 +99,20 @@ extern "C" fn handle() {
             game_state.max_pebbles_per_turn = max_pebbles_per_turn;
             game_state.pebbles_remaining = pebbles_count;
             game_state.difficulty = difficulty;
-            game_state.first_player = if rng.gen_bool(0.5) { Player::User } else { Player::Program };
+            let subject: [u8; 32] = array::from_fn(|i| i as u8 + 1);
+            game_state.first_player = match random(subject) {
+                Ok((_, num)) => {
+                    if num % 2 == 0 {
+                        Player::User
+                    } else {
+                        Player::Program
+                    }
+                }
+                Err(_) => {
+                    // 处理错误，例如默认选择某个玩家
+                    Player::Program
+                }
+            };
             game_state.winner = None;
         }
     }
