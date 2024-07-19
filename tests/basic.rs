@@ -14,7 +14,8 @@ fn test_pebbles_game() {
     let result = program.send(
         user_id,
         PebblesInit {
-            difficulty: DifficultyLevel::Easy,
+            // 简单是随机值,困难需要手动填值
+            difficulty: DifficultyLevel::Hard,
             pebbles_count: 15,
             max_pebbles_per_turn: 3,
         },
