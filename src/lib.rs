@@ -4,7 +4,6 @@ use gstd::{msg, prelude::*};
 use pebbles_game_io::*;
 use exec::random;
 use gstd::exec;
-use gstd::debug;
 
 static mut PEBBLES_GAME: Option<GameState> = None;
 
