@@ -79,7 +79,17 @@ extern "C" fn handle() {
                 msg::reply(PebblesEvent::Won(Player::User), 0).expect("Unable to reply");
             } else {
                 // Simulate program's turn
-                let program_pebbles = get_random_u32(Some(game_state.pebbles_remaining),Some(game_state.max_pebbles_per_turn));
+                let program_pebbles = match game_state.difficulty {
+                    DifficultyLevel::Easy => get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn)),
+                    DifficultyLevel::Hard => {
+                        let k = 4; // Example value for K, this should be adjusted based on game design
+                        let mut program_pebbles = game_state.pebbles_remaining % (k + 1);
+                        if program_pebbles == 0 {
+                            program_pebbles = get_random_u32(Some(1), Some(game_state.max_pebbles_per_turn));
+                        }
+                        program_pebbles
+                    }
+                };
                 game_state.pebbles_remaining -= program_pebbles;
 
                 msg::reply(PebblesEvent::CounterTurn(program_pebbles), 0).expect("Unable to reply");
